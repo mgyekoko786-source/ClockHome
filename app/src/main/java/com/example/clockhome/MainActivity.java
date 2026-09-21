@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
         gearLp.setMargins(0, 0, 18, 18);
         root.addView(settingsButton, gearLp);
 
-        settingsPanel = buildSettingsPanel(root);
+        settingsPanel = buildSettingsPanel();
         settingsPanel.setVisibility(View.GONE);
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(-1, -1);
         root.addView(settingsPanel, panelLp);
@@ -110,7 +110,7 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
-    private LinearLayout buildSettingsPanel(LinearLayout root) {
+    private private LinearLayout buildSettingsPanel() {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(24, 18, 24, 18);
