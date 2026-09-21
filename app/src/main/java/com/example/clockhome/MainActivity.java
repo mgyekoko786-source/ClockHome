@@ -28,7 +28,7 @@ import java.util.Locale;
 public class MainActivity extends Activity {
     private final Handler handler = new Handler();
     private SharedPreferences prefs;
-    private TextView timeText, secondsText, dateText, ampmText;
+    private TextView timeText, dateText;
     private ImageButton settingsButton;
     private LinearLayout settingsPanel;
     private Runnable hideGear;
@@ -63,33 +63,28 @@ public class MainActivity extends Activity {
         LinearLayout clock = new LinearLayout(this);
         clock.setOrientation(LinearLayout.VERTICAL);
         clock.setGravity(Gravity.CENTER);
-        clock.setPadding(24, 10, 24, 8);
+        clock.setPadding(18, 8, 18, 8);
 
-        timeText = makeText(150, Typeface.BOLD, getTimeColor());
-        secondsText = makeText(42, Typeface.BOLD, getSecondsColor());
-        ampmText = makeText(38, Typeface.BOLD, getSecondsColor());
-        dateText = makeText(34, Typeface.NORMAL, getDateColor());
-
-        LinearLayout timeRow = new LinearLayout(this);
-        timeRow.setGravity(Gravity.CENTER);
-        timeRow.setOrientation(LinearLayout.HORIZONTAL);
-        timeRow.addView(timeText, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        LinearLayout right = new LinearLayout(this);
-        right.setOrientation(LinearLayout.VERTICAL);
-        right.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        right.addView(ampmText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        right.addView(secondsText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        timeRow.addView(right, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-        clock.addView(timeRow, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 6f));
+        // Premium single-line clock: all time components share one baseline and size.
+        final float mainSize = 100f;
+        timeText = makeText(mainSize, Typeface.BOLD, getTimeColor());
+        timeText.setIncludeFontPadding(false);
+        timeText.setLetterSpacing(0.01f);
+        timeText.setShadowLayer(3.5f, 0f, 3f, Color.argb(150, 0, 0, 0));
+        clock.addView(timeText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 6f));
         clock.addView(dateText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2f));
         root.addView(clock, new FrameLayout.LayoutParams(-1, -1));
 
         settingsButton = new ImageButton(this);
         settingsButton.setImageResource(com.example.clockhome.R.drawable.ic_settings);
-        settingsButton.setBackgroundColor(Color.TRANSPARENT);
-        settingsButton.setPadding(12, 12, 12, 12);
+        android.graphics.drawable.GradientDrawable gearBg = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.argb(235, 48, 54, 62), Color.argb(235, 12, 14, 18)});
+        gearBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        gearBg.setStroke(2, Color.argb(120, 255, 255, 255));
+        settingsButton.setBackground(gearBg);
+        settingsButton.setPadding(14, 14, 14, 14);
+        settingsButton.setElevation(10f);
         settingsButton.setContentDescription("Settings");
         settingsButton.setOnClickListener(v -> openSettings());
         FrameLayout.LayoutParams gearLp = new FrameLayout.LayoutParams(72, 72, Gravity.RIGHT | Gravity.BOTTOM);
@@ -259,10 +254,25 @@ public class MainActivity extends Activity {
         Date now = new Date();
         boolean twelve = prefs.getBoolean("twelve", false);
         boolean showSeconds = prefs.getBoolean("seconds", true);
+
         String timePattern = twelve ? "hh:mm" : "HH:mm";
-        timeText.setText(new SimpleDateFormat(timePattern, Locale.getDefault()).format(now));
-        secondsText.setText(showSeconds ? new SimpleDateFormat(":ss", Locale.getDefault()).format(now) : "");
-        ampmText.setText(twelve ? new SimpleDateFormat("a", Locale.ENGLISH).format(now) : "");
+        String base = new SimpleDateFormat(timePattern, Locale.getDefault()).format(now);
+        String sec = showSeconds ? new SimpleDateFormat(":ss", Locale.getDefault()).format(now) : "";
+        String ap = twelve ? new SimpleDateFormat(" a", Locale.ENGLISH).format(now) : "";
+
+        android.text.SpannableString styled = new android.text.SpannableString(base + sec + ap);
+        int baseEnd = base.length();
+        int secEnd = baseEnd + sec.length();
+        styled.setSpan(new android.text.style.ForegroundColorSpan(getTimeColor()), 0, baseEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        if (sec.length() > 0) {
+            styled.setSpan(new android.text.style.ForegroundColorSpan(getSecondsColor()), baseEnd, secEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        if (ap.length() > 0) {
+            styled.setSpan(new android.text.style.ForegroundColorSpan(getSecondsColor()), secEnd, styled.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        timeText.setText(styled);
+        timeText.setShadowLayer(3.5f, 0f, 3f, Color.argb(155, 0, 0, 0));
+
         String datePattern = prefs.getString("dateFormat", "dd-MM-yyyy EEE");
         dateText.setText(new SimpleDateFormat(datePattern, Locale.ENGLISH).format(now));
         handler.postDelayed(this::updateClock, 500);
@@ -270,8 +280,6 @@ public class MainActivity extends Activity {
 
     private void refreshColors() {
         timeText.setTextColor(getTimeColor());
-        secondsText.setTextColor(getSecondsColor());
-        ampmText.setTextColor(getSecondsColor());
         dateText.setTextColor(getDateColor());
         getWindow().getDecorView().setBackgroundColor(getBackgroundColor());
         if (settingsPanel != null && settingsPanel.getParent() != null) settingsPanel.setBackgroundColor(Color.argb(245, 20,20,20));
