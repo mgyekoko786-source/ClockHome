@@ -68,7 +68,8 @@ public class MainActivity extends Activity {
         // Premium single-line clock: all time components share one baseline and size.
         final float mainSize = 100f;
         timeText = makeText(mainSize, Typeface.BOLD, getTimeColor());
-        timeText.setIncludeFontPadding(false);
+        dateText = makeText(22f, Typeface.NORMAL, getDateColor());
+        dateText.setIncludeFontPadding(false);
         timeText.setLetterSpacing(0.01f);
         timeText.setShadowLayer(3.5f, 0f, 3f, Color.argb(150, 0, 0, 0));
         clock.addView(timeText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 6f));
@@ -318,6 +319,7 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         hideSystemUi();
+        updateClock();
         showGearTemporarily();
     }
 
