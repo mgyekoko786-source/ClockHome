@@ -110,7 +110,7 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
-    private private LinearLayout buildSettingsPanel() {
+    private LinearLayout buildSettingsPanel() {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(24, 18, 24, 18);
