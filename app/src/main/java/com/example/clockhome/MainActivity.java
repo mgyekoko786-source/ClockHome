@@ -28,7 +28,7 @@ import java.util.Locale;
 public class MainActivity extends Activity {
     private final Handler handler = new Handler();
     private SharedPreferences prefs;
-    private TextView timeText, dateText;
+    private TextView timeText, amPmText, dateText;
     private ImageButton settingsButton;
     private LinearLayout settingsPanel;
     private Runnable hideGear;
@@ -68,11 +68,15 @@ public class MainActivity extends Activity {
         // Premium single-line clock: all time components share one baseline and size.
         final float mainSize = 100f;
         timeText = makeText(mainSize, Typeface.BOLD, getTimeColor());
-        dateText = makeText(22f, Typeface.NORMAL, getDateColor());
+        amPmText = makeText(28f, Typeface.BOLD, getSecondsColor());
+        amPmText.setIncludeFontPadding(false);
+        dateText = makeText(27f, Typeface.NORMAL, getDateColor());
         dateText.setIncludeFontPadding(false);
         timeText.setLetterSpacing(0.01f);
+        timeText.setIncludeFontPadding(false);
         timeText.setShadowLayer(3.5f, 0f, 3f, Color.argb(150, 0, 0, 0));
         clock.addView(timeText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 6f));
+        clock.addView(amPmText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.2f));
         clock.addView(dateText, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2f));
         root.addView(clock, new FrameLayout.LayoutParams(-1, -1));
 
@@ -89,7 +93,7 @@ public class MainActivity extends Activity {
         settingsButton.setContentDescription("Settings");
         settingsButton.setOnClickListener(v -> openSettings());
         FrameLayout.LayoutParams gearLp = new FrameLayout.LayoutParams(72, 72, Gravity.RIGHT | Gravity.BOTTOM);
-        gearLp.setMargins(0, 0, 18, 18);
+        gearLp.setMargins(0, 0, 34, 30);
         root.addView(settingsButton, gearLp);
 
         settingsPanel = buildSettingsPanel();
@@ -126,6 +130,12 @@ public class MainActivity extends Activity {
         fmt.addView(button("24 HOUR", v -> setTimeMode(false)));
         fmt.addView(button("12 HOUR AM/PM", v -> setTimeMode(true)));
         content.addView(fmt);
+
+        content.addView(label("AM / PM"));
+        LinearLayout ap = row();
+        ap.addView(button("SHOW", v -> { prefs.edit().putBoolean("showAmPm", true).apply(); refreshColors(); }));
+        ap.addView(button("HIDE", v -> { prefs.edit().putBoolean("showAmPm", false).apply(); refreshColors(); }));
+        content.addView(ap);
 
         content.addView(label("SECONDS"));
         LinearLayout sec = row();
@@ -259,19 +269,20 @@ public class MainActivity extends Activity {
         String timePattern = twelve ? "hh:mm" : "HH:mm";
         String base = new SimpleDateFormat(timePattern, Locale.getDefault()).format(now);
         String sec = showSeconds ? new SimpleDateFormat(":ss", Locale.getDefault()).format(now) : "";
-        String ap = twelve ? new SimpleDateFormat(" a", Locale.ENGLISH).format(now) : "";
+        boolean showAmPm = prefs.getBoolean("showAmPm", true);
+        String ap = twelve ? new SimpleDateFormat("a", Locale.ENGLISH).format(now) : "";
 
-        android.text.SpannableString styled = new android.text.SpannableString(base + sec + ap);
+        android.text.SpannableString styled = new android.text.SpannableString(base + sec);
         int baseEnd = base.length();
         int secEnd = baseEnd + sec.length();
         styled.setSpan(new android.text.style.ForegroundColorSpan(getTimeColor()), 0, baseEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         if (sec.length() > 0) {
             styled.setSpan(new android.text.style.ForegroundColorSpan(getSecondsColor()), baseEnd, secEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
-        if (ap.length() > 0) {
-            styled.setSpan(new android.text.style.ForegroundColorSpan(getSecondsColor()), secEnd, styled.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
         timeText.setText(styled);
+        amPmText.setText(ap);
+        amPmText.setVisibility((twelve && showAmPm) ? View.VISIBLE : View.GONE);
+        amPmText.setTextColor(getSecondsColor());
         timeText.setShadowLayer(3.5f, 0f, 3f, Color.argb(155, 0, 0, 0));
 
         String datePattern = prefs.getString("dateFormat", "dd-MM-yyyy EEE");
@@ -282,6 +293,7 @@ public class MainActivity extends Activity {
     private void refreshColors() {
         timeText.setTextColor(getTimeColor());
         dateText.setTextColor(getDateColor());
+        amPmText.setTextColor(getSecondsColor());
         getWindow().getDecorView().setBackgroundColor(getBackgroundColor());
         if (settingsPanel != null && settingsPanel.getParent() != null) settingsPanel.setBackgroundColor(Color.argb(245, 20,20,20));
     }
